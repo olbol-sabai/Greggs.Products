@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Greggs.Products.Api.Models;
+﻿using Greggs.Products.Api.Enums;
+using Greggs.Products.Api.Models.DTO.Product;
+using Greggs.Products.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace Greggs.Products.Api.Controllers;
 
@@ -11,30 +11,52 @@ namespace Greggs.Products.Api.Controllers;
 [Route("[controller]")]
 public class ProductController : ControllerBase
 {
-    private static readonly string[] Products = new[]
-    {
-        "Sausage Roll", "Vegan Sausage Roll", "Steak Bake", "Yum Yum", "Pink Jammie"
-    };
-
     private readonly ILogger<ProductController> _logger;
-
-    public ProductController(ILogger<ProductController> logger)
+    private readonly IProductService _productService;
+    
+    public ProductController(
+        IProductService productService,
+        ILogger<ProductController> logger
+        )
     {
         _logger = logger;
+        _productService = productService;
     }
 
-    [HttpGet]
-    public IEnumerable<Product> Get(int pageStart = 0, int pageSize = 5)
-    {
-        if (pageSize > Products.Length)
-            pageSize = Products.Length;
+    private const string InvalidPaginationParameterMessage = "PageStart must be non-negative. PageSize must be greater than zero.";
 
-        var rng = new Random();
-        return Enumerable.Range(1, pageSize).Select(index => new Product
-            {
-                PriceInPounds = rng.Next(0, 10),
-                Name = Products[rng.Next(Products.Length)]
-            })
-            .ToArray();
+    [HttpGet("fanatic")]
+    public IActionResult ListByDateAdded(int pageStart = 0, int pageSize = 5)
+    {
+        if (pageStart < 0 || pageSize <= 0)
+        {
+            return BadRequest(InvalidPaginationParameterMessage);
+        }
+        var results = _productService.List<ProductDTO>(pageStart, pageSize, nameof(ProductDTO.DateAdded));
+        
+        return Ok(results);
+    }
+
+    [HttpGet("currency/{currency}")]
+    public IActionResult ListWithCurrency(Currency currency, int pageStart = 0, int pageSize = 5)
+    {
+        if (pageStart < 0 || pageSize <= 0)
+        {
+            return BadRequest(InvalidPaginationParameterMessage);
+        }
+
+        var results = _productService.List<ProductWithCurrencyDTO>(pageStart, pageSize);
+        
+        if (results.Any())
+            results = _productService
+                .List<ProductWithCurrencyDTO>(pageStart, pageSize)
+                .Select(item =>
+                {
+                    item.CurrencyCode = currency;
+                    return item;
+                })
+                .ToList();
+
+        return Ok(results);
     }
 }
