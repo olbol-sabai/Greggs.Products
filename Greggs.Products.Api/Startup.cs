@@ -31,14 +31,14 @@ public class Startup
             app.UseDeveloperExceptionPage();
         }
 
+        app.UseRouting();
+
         app.UseMiddleware<ExceptionMiddleware>();
 
         app.UseSwagger();
         app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "Greggs Products API V1"); });
 
         app.UseHttpsRedirection();
-
-        app.UseRouting();
 
         app.UseAuthorization();
 
