@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using AutoMapper;
+﻿using AutoMapper;
 using Greggs.Products.Api.Models.DTO.Product;
 using Greggs.Products.Api.Models.Entities;
 using Greggs.Products.Api.Services;
+using Greggs.Products.Api.Shared.PaginationFilterViewModels;
 using Moq;
+using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Greggs.Products.UnitTests
@@ -26,9 +26,7 @@ namespace Greggs.Products.UnitTests
             };
 
             mockRepository.Setup(repo => repo.List(
-                It.IsAny<int?>(),
-                It.IsAny<int?>(),
-                It.IsAny<string>()))
+                It.IsAny<PaginationParameters>()))
                 .Returns(mockEntityData);
 
             mockMapper.Setup(mapper => mapper.Map<ProductDTO>(It.IsAny<Product>()))
@@ -41,7 +39,13 @@ namespace Greggs.Products.UnitTests
 
             var exception = Record.Exception(() =>
             {
-                var result = mockService.List<ProductDTO>(0, 2, "InvalidFieldName");
+                var result = mockService.List<ProductDTO>(
+                    new PaginationParameters { 
+                        PageSize = 5,
+                        PageStart = 0,
+                        OrderBy = false,
+                        OrderByField = "InvalidFieldName"
+                    });
             });
 
             Assert.Null(exception);

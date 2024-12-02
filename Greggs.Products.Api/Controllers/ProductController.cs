@@ -1,6 +1,7 @@
 ﻿using Greggs.Products.Api.Enums;
 using Greggs.Products.Api.Models.DTO.Product;
 using Greggs.Products.Api.Services;
+using Greggs.Products.Api.Shared.PaginationFilterViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Linq;
@@ -23,16 +24,18 @@ public class ProductController : ControllerBase
         _productService = productService;
     }
 
-    private const string InvalidPaginationParameterMessage = "PageStart must be non-negative. PageSize must be greater than zero.";
-
     [HttpGet("fanatic")]
-    public IActionResult ListByDateAdded(int pageStart = 0, int pageSize = 5)
+    public IActionResult List(int pageStart = 0, int pageSize = 5)
     {
-        if (pageStart < 0 || pageSize <= 0)
+        var paginationParameters = new PaginationParameters
         {
-            return BadRequest(InvalidPaginationParameterMessage);
-        }
-        var results = _productService.List<ProductDTO>(pageStart, pageSize, nameof(ProductDTO.DateAdded));
+            PageStart = pageStart,
+            PageSize = pageSize,
+            OrderBy = false,
+            OrderByField = nameof(ProductDTO.DateAdded)
+        };
+
+        var results = _productService.List<ProductDTO>(paginationParameters).ToList();
         
         return Ok(results);
     }
@@ -40,22 +43,18 @@ public class ProductController : ControllerBase
     [HttpGet("currency/{currency}")]
     public IActionResult ListWithCurrency(Currency currency, int pageStart = 0, int pageSize = 5)
     {
-        if (pageStart < 0 || pageSize <= 0)
+        var paginationParameters = new PaginationParameters
         {
-            return BadRequest(InvalidPaginationParameterMessage);
-        }
+            PageStart = pageStart,
+            PageSize = pageSize,
+            OrderBy = true,
+            OrderByField = nameof(ProductDTO.Name)
+        };
 
-        var results = _productService.List<ProductWithCurrencyDTO>(pageStart, pageSize);
-        
+        var results = _productService.List<ProductWithCurrencyDTO>(paginationParameters);
+
         if (results.Any())
-            results = _productService
-                .List<ProductWithCurrencyDTO>(pageStart, pageSize)
-                .Select(item =>
-                {
-                    item.CurrencyCode = currency;
-                    return item;
-                })
-                .ToList();
+            results = _productService.AssignCurrency(currency, results).ToList();
 
         return Ok(results);
     }

@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
 using Greggs.Products.Api.DataAccess;
+using Greggs.Products.Api.Enums;
 using Greggs.Products.Api.Models.DTO.Product;
 using Greggs.Products.Api.Models.Entities;
+using Greggs.Products.Api.Shared.PaginationFilterViewModels;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Greggs.Products.Api.Services
 {
@@ -21,13 +24,23 @@ namespace Greggs.Products.Api.Services
         }
 
         public IEnumerable<T> List<T>(
-            int? pageStart,
-            int? pageSize,
-            string orderByDescendingField = nameof(ProductDTO.DateAdded))
+            PaginationParameters paginationParameters)
             where T : IProduct
         { 
-            var entities = _dataAccess.List(pageStart, pageSize, orderByDescendingField);
+            var entities = _dataAccess.List(paginationParameters);
             return _mapper.Map<IEnumerable<T>>(entities);
+        }
+        
+        public IEnumerable<ProductWithCurrencyDTO> AssignCurrency(
+            Currency currency,
+            IEnumerable<ProductWithCurrencyDTO> list)
+        { 
+            return list.Select(item =>
+            {
+                item.CurrencyCode = currency;
+                return item;
+            })
+            .ToList();
         }
 
     }

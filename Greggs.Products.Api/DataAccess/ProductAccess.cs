@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Greggs.Products.Api.Models.Entities;
+using Greggs.Products.Api.Shared.PaginationFilterViewModels;
 
 namespace Greggs.Products.Api.DataAccess;
 
@@ -23,25 +24,37 @@ public class ProductAccess : IDataAccess<Product>
     };
 
 
-    public IEnumerable<Product> List(int? pageStart, int? pageSize, string orderByDescendingField = nameof(Product.DateAdded))
+    public IEnumerable<Product> List(PaginationParameters paginationParameters)
     {
         var queryable = ProductDatabase.AsQueryable();
 
-        var propertyInfo = typeof(Product).GetProperty(orderByDescendingField);
+        var propertyInfo = typeof(Product).GetProperty(paginationParameters.OrderByField);
         if (propertyInfo != null)
         {
-            queryable = queryable.OrderByDescending(x => propertyInfo.GetValue(x));
+            if (paginationParameters.OrderBy)
+            {
+                queryable = queryable.OrderBy(x => propertyInfo.GetValue(x));
+            }
+            else
+            { 
+                queryable = queryable.OrderByDescending(x => propertyInfo.GetValue(x));
+            }
         }
         else
         {
-            queryable = queryable.OrderByDescending(s => s.DateAdded);
+            if (paginationParameters.OrderBy)
+            {
+                queryable = queryable.OrderBy(s => s.DateAdded);
+            }
+            else
+            { 
+                queryable = queryable.OrderByDescending(s => s.DateAdded);
+            }
         }
 
-        if (pageStart.HasValue)
-            queryable = queryable.Skip(pageStart.Value);
+        queryable = queryable.Skip(paginationParameters.PageStart);
 
-        if (pageSize.HasValue)
-            queryable = queryable.Take(pageSize.Value);
+        queryable = queryable.Take(paginationParameters.PageSize);
 
         return queryable.ToList();
     }

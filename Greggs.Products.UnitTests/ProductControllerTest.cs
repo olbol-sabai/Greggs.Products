@@ -2,11 +2,14 @@
 using Greggs.Products.Api.Enums;
 using Greggs.Products.Api.Models.DTO.Product;
 using Greggs.Products.Api.Services;
+using Greggs.Products.Api.Shared.Exceptions;
+using Greggs.Products.Api.Shared.PaginationFilterViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Greggs.Products.UnitTests
@@ -25,81 +28,112 @@ namespace Greggs.Products.UnitTests
         }
 
         [Fact]
-        public void ListByDateAdded_ShouldReturnBadRequest_WhenPaginationIsInvalid()
+        public void ListByDateAdded_InvalidPaginationParameters_ThrowsParameterException()
         {
-            int pageStart = -1;
-            int pageSize = 0;
+            var invalidPaginationParameters = new PaginationParameters();
 
-            var result = _controller.ListByDateAdded(pageStart, pageSize);
+            var exception = Assert.Throws<ParameterException>(() =>
+            {
+                invalidPaginationParameters.PageStart = -1;
+            });
 
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("PageStart must be non-negative. PageSize must be greater than zero.", badRequestResult.Value);
+            Assert.Equal("PageStart must be non-negative.", exception.Message);
         }
-        
-        [Fact]
-        public void ListWithCurrency_ShouldReturnBadRequest_WhenPaginationIsInvalid()
-        {
-            int pageStart = 0;
-            int pageSize = -1;
 
-            var result = _controller.ListWithCurrency(Currency.GBP, pageStart, pageSize);
-
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("PageStart must be non-negative. PageSize must be greater than zero.", badRequestResult.Value);
-        }
 
         [Fact]
         public void ListByDateAdded_ShouldReturnOk_WhenValidPagination()
         {
-            int pageStart = 0;
-            int pageSize = 5;
             var products = new List<ProductDTO>
             {
                 new() { Name = "Sausage Roll", PriceInPounds = 1.0m, DateAdded = DateTime.Now },
                 new() { Name = "Pizza Slice", PriceInPounds = 2.0m, DateAdded = DateTime.Now }
             };
 
+            int pageStart = 0;
+            int pageSize = 5;
+
+            var paginationModel = new PaginationParameters {
+                PageSize = pageSize,
+                PageStart = pageStart,
+                OrderBy = false,
+                OrderByField = nameof(ProductDTO.DateAdded)
+            };
+
             _productServiceMock
-                .Setup(service => service.List<ProductDTO>(pageStart, pageSize, nameof(ProductDTO.DateAdded)))
+                .Setup(service => service.List<ProductDTO>(
+                    It.Is<PaginationParameters>(p =>
+                        p.PageStart == paginationModel.PageStart &&
+                        p.PageSize == paginationModel.PageSize &&
+                        p.OrderBy == paginationModel.OrderBy &&
+                        p.OrderByField == paginationModel.OrderByField)))
                 .Returns(products);
 
-            var result = _controller.ListByDateAdded(pageStart, pageSize);
+            var result = _controller.List(pageStart, pageSize);
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var returnedProducts = Assert.IsType<List<ProductDTO>>(okResult.Value);
-            Assert.Equal(2, returnedProducts.Count);
+            Assert.Equal(2, returnedProducts.Count());
         }
 
 
         [Fact]
         public void ListWithCurrency_ShouldReturnOk_WhenValidPaginationAndResultsExist()
         {
-            int pageStart = 0;
-            int pageSize = 5;
-            var currency = Currency.EUR;
-
             var products = new List<ProductWithCurrencyDTO>
             {
                 new() { Name = "Sausage Roll", PriceInPounds = 1.0m, DateAdded = DateTime.Now, CurrencyCode = Currency.GBP },
                 new() { Name = "Pizza Slice", PriceInPounds = 2.0m, DateAdded = DateTime.Now, CurrencyCode = Currency.GBP }
             };
 
+            int pageStart = 0;
+            int pageSize = 5;
+            var currency = Currency.EUR;
+
+            var paginationModel = new PaginationParameters
+            {
+                PageSize = pageSize,
+                PageStart = pageStart,
+                OrderBy = true,
+                OrderByField = nameof(ProductDTO.Name)
+            };
+
             _productServiceMock
-                .Setup(service => service.List<ProductWithCurrencyDTO>(pageStart, pageSize, "DateAdded"))
+                .Setup(service => service.List<ProductWithCurrencyDTO>(
+                    It.Is<PaginationParameters>(p =>
+                        p.PageStart == paginationModel.PageStart &&
+                        p.PageSize == paginationModel.PageSize &&
+                        p.OrderBy == paginationModel.OrderBy &&
+                        p.OrderByField == paginationModel.OrderByField)))
                 .Returns(products);
+
+            _productServiceMock
+                .Setup(service => service.AssignCurrency(
+                    currency,
+                    It.IsAny<IEnumerable<ProductWithCurrencyDTO>>()))
+                .Returns((Currency curr, IEnumerable<ProductWithCurrencyDTO> list) =>
+                {
+                    return list.Select(item =>
+                    {
+                        item.CurrencyCode = curr;
+                        return item;
+                    });
+                });
 
             var result = _controller.ListWithCurrency(currency, pageStart, pageSize);
 
             var okResult = Assert.IsType<OkObjectResult>(result);
             var returnedProducts = Assert.IsType<List<ProductWithCurrencyDTO>>(okResult.Value);
 
-            Assert.Equal(2, returnedProducts.Count);
+            Assert.Equal(2, returnedProducts.Count());
             Assert.All(returnedProducts, p =>
             {
                 Assert.Equal(currency, p.CurrencyCode);
                 Assert.Contains(products, original => original.Name == p.Name);
             });
         }
+
+
 
     }
 }

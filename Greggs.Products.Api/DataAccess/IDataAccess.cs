@@ -1,8 +1,10 @@
+using Greggs.Products.Api.Models.Entities;
+using Greggs.Products.Api.Shared.PaginationFilterViewModels;
 using System.Collections.Generic;
 
 namespace Greggs.Products.Api.DataAccess;
 
 public interface IDataAccess<out T>
 {
-    IEnumerable<T> List(int? pageStart, int? pageSize, string orderByDescendingField);
+    IEnumerable<Product> List(PaginationParameters paginationParameters);
 }

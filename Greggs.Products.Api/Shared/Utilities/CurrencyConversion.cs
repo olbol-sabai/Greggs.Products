@@ -1,7 +1,7 @@
 ﻿using Greggs.Products.Api.Enums;
 using System;
 
-namespace Greggs.Products.Api.Utilities
+namespace Greggs.Products.Api.Shared.Utilities
 {
     public static class CurrencyConversion
     {
@@ -10,17 +10,24 @@ namespace Greggs.Products.Api.Utilities
 
         public static decimal Convert(Currency currency, decimal amountInPounds)
         {
+            decimal convertedAmount;
+
             switch (currency)
             {
                 case Currency.GBP:
-                    return amountInPounds;
+                    convertedAmount = amountInPounds;
+                    break;
                 case Currency.EUR:
-                    return amountInPounds * EuroConversion;
+                    convertedAmount = amountInPounds * EuroConversion;
+                    break;
                 case Currency.USD:
-                    return amountInPounds * DollarConversion;
+                    convertedAmount = amountInPounds * DollarConversion;
+                    break;
                 default:
                     throw new ArgumentException("Currency not found");
             }
+
+            return decimal.Round(convertedAmount, 2, MidpointRounding.AwayFromZero);
         }
     }
 }
