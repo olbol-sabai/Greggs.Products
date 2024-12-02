@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Greggs.Products.Api.Models.Entities;
-using Greggs.Products.Api.Shared.PaginationFilterViewModels;
+using Greggs.Products.Api.Shared.ViewModels.PaginationFilterViewModels;
 
 namespace Greggs.Products.Api.DataAccess;
 

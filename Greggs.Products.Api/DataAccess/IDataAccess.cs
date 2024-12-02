@@ -1,5 +1,5 @@
 using Greggs.Products.Api.Models.Entities;
-using Greggs.Products.Api.Shared.PaginationFilterViewModels;
+using Greggs.Products.Api.Shared.ViewModels.PaginationFilterViewModels;
 using System.Collections.Generic;
 
 namespace Greggs.Products.Api.DataAccess;

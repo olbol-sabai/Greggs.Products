@@ -1,6 +1,6 @@
 ﻿using Greggs.Products.Api.Enums;
 using Greggs.Products.Api.Models.DTO.Product;
-using Greggs.Products.Api.Shared.PaginationFilterViewModels;
+using Greggs.Products.Api.Shared.ViewModels.PaginationFilterViewModels;
 using System.Collections.Generic;
 
 namespace Greggs.Products.Api.Services

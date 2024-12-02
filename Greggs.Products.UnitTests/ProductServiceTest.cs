@@ -2,7 +2,7 @@
 using Greggs.Products.Api.Models.DTO.Product;
 using Greggs.Products.Api.Models.Entities;
 using Greggs.Products.Api.Services;
-using Greggs.Products.Api.Shared.PaginationFilterViewModels;
+using Greggs.Products.Api.Shared.ViewModels.PaginationFilterViewModels;
 using Moq;
 using System;
 using System.Collections.Generic;

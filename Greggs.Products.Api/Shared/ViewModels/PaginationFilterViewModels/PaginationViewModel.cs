@@ -1,6 +1,6 @@
 ﻿using Greggs.Products.Api.Shared.Exceptions;
 
-namespace Greggs.Products.Api.Shared.PaginationFilterViewModels
+namespace Greggs.Products.Api.Shared.ViewModels.PaginationFilterViewModels
 {
     public class PaginationParameters
     {
